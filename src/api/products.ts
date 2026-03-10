@@ -1,4 +1,5 @@
 import axios, { AxiosError } from 'axios';
+
 import type {
   Category,
   CreateProductPayload,
@@ -46,6 +47,16 @@ export const productsApi = {
 export const categoriesApi = {
   list: () =>
     api.get<{ data: Category[] }>('/categories'),
+};
+
+export interface AuditLogsResponse {
+  data: import('../types').AuditLog[];
+  pagination: import('../types').Pagination;
+}
+
+export const auditLogsApi = {
+  list: (params: { page?: number }) =>
+    api.get<AuditLogsResponse>('/audit-logs', { params }),
 };
 
 export default api;

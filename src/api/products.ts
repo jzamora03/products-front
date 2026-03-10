@@ -1,61 +1,50 @@
-import axios from 'axios';
+import axios, { AxiosError } from 'axios';
+import type {
+  Category,
+  CreateProductPayload,
+  UpdateProductPayload,
+  Product,
+  ProductsResponse,
+} from '../types';
 
 const api = axios.create({
-  baseURL: 'http://localhost:8000/api',
+  baseURL: import.meta.env.VITE_API_URL,
   headers: {
-    'Authorization': 'Bearer mytoken123',
     'Content-Type': 'application/json',
+    Authorization: `Bearer ${import.meta.env.VITE_API_TOKEN}`,
   },
 });
 
-export interface Category {
-  id: number;
-  name: string;
-  slug: string;
-}
+api.interceptors.response.use(
+  response => response,
+  (error: AxiosError) => {
+    console.error(`[API] ${error.config?.method?.toUpperCase()} ${error.config?.url} →`, error.response?.status);
+    return Promise.reject(error);
+  }
+);
 
-export interface Product {
-  id: number;
-  name: string;
-  sku: string;
-  price: number;
-  stock: number;
-  category_id: number;
-  category: Category;
-  created_at: string;
-  updated_at: string;
-}
-
-export interface Pagination {
-  total: number;
-  per_page: number;
-  current_page: number;
-  last_page: number;
-  from: number | null;
-  to: number | null;
-}
-
-export interface ProductsResponse {
-  data: Product[];
-  pagination: Pagination;
-}
-
-export interface CreateProductPayload {
-  name: string;
-  sku: string;
-  price: number;
-  stock: number;
-  category_id: number;
+export interface ListProductsParams {
+  page?: number;
+  search?: string;
+  category_id?: number;
 }
 
 export const productsApi = {
-  list: (params: { page?: number; search?: string; category_id?: number }) =>
+  list: (params: ListProductsParams) =>
     api.get<ProductsResponse>('/products', { params }),
 
   create: (payload: CreateProductPayload) =>
     api.post<Product>('/products', payload),
 
-  categories: () =>
+  update: (id: number, payload: UpdateProductPayload) =>
+    api.put<Product>(`/products/${id}`, payload),
+
+  remove: (id: number) =>
+    api.delete<void>(`/products/${id}`),
+};
+
+export const categoriesApi = {
+  list: () =>
     api.get<{ data: Category[] }>('/categories'),
 };
 

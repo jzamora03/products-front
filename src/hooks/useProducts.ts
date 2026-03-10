@@ -1,11 +1,13 @@
 import { useState, useEffect } from 'react';
 import { productsApi } from '../api/products';
-import type { Product, Pagination } from '../api/products';
+
+import type { Product, Pagination } from '../types';
 
 interface UseProductsParams {
   page: number;
   search: string;
   categoryId?: number;
+  refreshKey?: number;
 }
 
 interface UseProductsResult {
@@ -15,7 +17,7 @@ interface UseProductsResult {
   error: string | null;
 }
 
-export function useProducts({ page, search, categoryId }: UseProductsParams): UseProductsResult {
+export function useProducts({ page, search, categoryId, refreshKey }: UseProductsParams): UseProductsResult {
   const [products, setProducts] = useState<Product[]>([]);
   const [pagination, setPagination] = useState<Pagination | null>(null);
   const [loading, setLoading] = useState(true);
@@ -46,7 +48,7 @@ export function useProducts({ page, search, categoryId }: UseProductsParams): Us
       });
 
     return () => { cancelled = true; };
-  }, [page, search, categoryId]);
+  }, [page, search, categoryId, refreshKey]);
 
   return { products, pagination, loading, error };
 }

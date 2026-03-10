@@ -1,73 +1,95 @@
-# React + TypeScript + Vite
+# Products Catalog — Frontend
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+React 18 + TypeScript frontend for the Products Catalog API. Built with Vite, Axios, and a clean component architecture.
 
-Currently, two official plugins are available:
+---
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) (or [oxc](https://oxc.rs) when used in [rolldown-vite](https://vite.dev/guide/rolldown)) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+## Tech Stack
 
-## React Compiler
+- **React 18** + **TypeScript**
+- **Vite** — dev server and bundler
+- **Axios** — HTTP client with interceptors
+- **CSS Variables** — custom design system, no UI library
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+---
 
-## Expanding the ESLint configuration
+## Project Structure
 
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
-
-```js
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-
-      // Remove tseslint.configs.recommended and replace with this
-      tseslint.configs.recommendedTypeChecked,
-      // Alternatively, use this for stricter rules
-      tseslint.configs.strictTypeChecked,
-      // Optionally, add this for stylistic rules
-      tseslint.configs.stylisticTypeChecked,
-
-      // Other configs...
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+```
+src/
+├── api/
+│   └── products.ts        # Axios instance + productsApi + categoriesApi
+├── components/
+│   ├── CreateProductModal.tsx
+│   ├── EditProductModal.tsx
+│   └── ConfirmDialog.tsx
+├── hooks/
+│   ├── useProducts.ts     # Data fetching with loading/error states
+│   └── useDebounce.ts     # 300ms debounce for search
+├── types/
+│   ├── product.ts
+│   ├── category.ts
+│   ├── pagination.ts
+│   └── index.ts           # Barrel export
+├── App.tsx
+└── App.css
 ```
 
-You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
+---
 
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
+## Getting Started
 
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-      // Enable lint rules for React
-      reactX.configs['recommended-typescript'],
-      // Enable lint rules for React DOM
-      reactDom.configs.recommended,
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+### Prerequisites
+
+- Node.js 18+
+- The Laravel API running on `http://localhost:8000`
+
+### Installation
+
+```bash
+npm install
 ```
+
+### Environment Variables
+
+Create a `.env` file in the root of the frontend project:
+
+```env
+VITE_API_URL=http://localhost:8000/api
+VITE_API_TOKEN=mytoken123
+```
+
+### Run Development Server
+
+```bash
+npm run dev
+```
+
+App available at: `http://localhost:5173`
+
+---
+
+## Features
+
+- **Product table** — name, SKU, price, stock with color-coded badges, category
+- **Real-time search** — debounced 300ms, filters by name or SKU
+- **Pagination** — 10 products per page, previous/next navigation
+- **Create product** — modal form with frontend validation
+- **Edit product** — pre-filled modal, validates before submitting
+- **Delete product** — confirmation dialog before soft-deleting
+- **Loading state** — spinner while fetching
+- **Error state** — message when API is unreachable
+
+---
+
+## Design Decisions
+
+**Types in `src/types/`** — all TypeScript interfaces live in their own files, separate from API logic. This makes them reusable across components without circular dependencies.
+
+**Barrel export (`types/index.ts`)** — single import point for all types: `import type { Product, Category } from '../types'`.
+
+**`categoriesApi` separate from `productsApi`** — each resource has its own API object. Easier to extend and test independently.
+
+**Environment variables** — API URL and token come from `.env`, never hardcoded. Swap environments without touching source code.
+
+**`useProducts` hook** — encapsulates all data fetching logic. Components stay clean and focused on rendering.

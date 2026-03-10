@@ -1,10 +1,12 @@
 import { useState, useEffect } from 'react';
 import { productsApi, categoriesApi } from '../api/products';
+import type { Product } from '../types';  // ← moverlo a types
 import type { Category, CreateProductPayload } from '../types';
 
 interface Props {
+  product: Product;
   onClose: () => void;
-  onCreated: () => void;
+  onUpdated: () => void;
 }
 
 interface FormState {
@@ -23,8 +25,14 @@ interface FormErrors {
   category_id?: string;
 }
 
-export default function CreateProductModal({ onClose, onCreated }: Props) {
-  const [form, setForm] = useState<FormState>({ name: '', sku: '', price: '', stock: '', category_id: '' });
+export default function EditProductModal({ product, onClose, onUpdated }: Props) {
+  const [form, setForm] = useState<FormState>({
+    name: product.name,
+    sku: product.sku,
+    price: String(product.price),
+    stock: String(product.stock),
+    category_id: String(product.category_id),
+  });
   const [errors, setErrors] = useState<FormErrors>({});
   const [categories, setCategories] = useState<Category[]>([]);
   const [submitting, setSubmitting] = useState(false);
@@ -59,58 +67,53 @@ export default function CreateProductModal({ onClose, onCreated }: Props) {
         stock: Number(form.stock),
         category_id: Number(form.category_id),
       };
-      await productsApi.create(payload);
-      onCreated();
+      await productsApi.update(product.id, payload);
+      onUpdated();
       onClose();
     } catch (e: any) {
-      const msg = e?.response?.data?.message || 'Error creating product.';
+      const msg = e?.response?.data?.message || 'Error updating product.';
       setApiError(msg);
     } finally {
       setSubmitting(false);
     }
   }
 
-  function field(key: keyof FormState, label: string, type = 'text', options?: Category[]) {
-    return (
-      <div className="field">
-        <label>{label}</label>
-        {options ? (
-          <select value={form[key]} onChange={e => setForm(f => ({ ...f, [key]: e.target.value }))}>
-            <option value="">Select category...</option>
-            {options.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
-          </select>
-        ) : (
-          <input
-            type={type}
-            value={form[key]}
-            onChange={e => setForm(f => ({ ...f, [key]: e.target.value }))}
-            placeholder={label}
-          />
-        )}
-        {errors[key] && <span className="field-error">{errors[key]}</span>}
-      </div>
-    );
-  }
-
   return (
     <div className="modal-overlay" onClick={onClose}>
       <div className="modal" onClick={e => e.stopPropagation()}>
         <div className="modal-header">
-          <h2>New Product</h2>
+          <h2>Edit Product</h2>
           <button className="modal-close" onClick={onClose}>✕</button>
         </div>
         <div className="modal-body">
           {apiError && <div className="api-error">{apiError}</div>}
-          {field('name', 'Name')}
-          {field('sku', 'SKU')}
-          {field('price', 'Price', 'number')}
-          {field('stock', 'Stock', 'number')}
-          {field('category_id', 'Category', 'text', categories)}
+
+          {(['name', 'sku', 'price', 'stock'] as const).map(key => (
+            <div className="field" key={key}>
+              <label>{key.charAt(0).toUpperCase() + key.slice(1)}</label>
+              <input
+                type={key === 'price' || key === 'stock' ? 'number' : 'text'}
+                value={form[key]}
+                onChange={e => setForm(f => ({ ...f, [key]: e.target.value }))}
+                placeholder={key}
+              />
+              {errors[key] && <span className="field-error">{errors[key]}</span>}
+            </div>
+          ))}
+
+          <div className="field">
+            <label>Category</label>
+            <select value={form.category_id} onChange={e => setForm(f => ({ ...f, category_id: e.target.value }))}>
+              <option value="">Select category...</option>
+              {categories.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
+            </select>
+            {errors.category_id && <span className="field-error">{errors.category_id}</span>}
+          </div>
         </div>
         <div className="modal-footer">
           <button className="btn-secondary" onClick={onClose}>Cancel</button>
           <button className="btn-primary" onClick={handleSubmit} disabled={submitting}>
-            {submitting ? 'Creating...' : 'Create Product'}
+            {submitting ? 'Saving...' : 'Save Changes'}
           </button>
         </div>
       </div>

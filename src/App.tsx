@@ -1,32 +1,54 @@
 import { useState } from 'react';
 import { useDebounce } from './hooks/useDebounce';
 import { useProducts } from './hooks/useProducts';
+import { productsApi } from './api/products';
 import CreateProductModal from './components/CreateProductModal';
+import EditProductModal from './components/EditProductModal';
+import ConfirmDialog from './components/ConfirmDialog';
+
+import type { Product } from './types/index';
 import './App.css';
 
 export default function App() {
   const [search, setSearch] = useState('');
   const [page, setPage] = useState(1);
-  const [showModal, setShowModal] = useState(false);
   const [refreshKey, setRefreshKey] = useState(0);
+
+  const [showCreate, setShowCreate] = useState(false);
+  const [editProduct, setEditProduct] = useState<Product | null>(null);
+  const [deleteProduct, setDeleteProduct] = useState<Product | null>(null);
+  const [deleting, setDeleting] = useState(false);
 
   const debouncedSearch = useDebounce(search, 300);
   const { products, pagination, loading, error } = useProducts({
     page,
     search: debouncedSearch,
-    // force re-fetch after create
-    ...(refreshKey ? {} : {}),
+    categoryId: undefined,
+    refreshKey,
   });
 
-  // Reset page when search changes
   function handleSearch(value: string) {
     setSearch(value);
     setPage(1);
   }
 
-  function handleCreated() {
+  function refresh() {
     setRefreshKey(k => k + 1);
     setPage(1);
+  }
+
+  async function handleDelete() {
+    if (!deleteProduct) return;
+    setDeleting(true);
+    try {
+      await productsApi.remove(deleteProduct.id);
+      setDeleteProduct(null);
+      refresh();
+    } catch {
+      // silent
+    } finally {
+      setDeleting(false);
+    }
   }
 
   return (
@@ -39,7 +61,7 @@ export default function App() {
             <span className="subtitle">Catalog Manager</span>
           </div>
         </div>
-        <button className="btn-primary" onClick={() => setShowModal(true)}>
+        <button className="btn-primary" onClick={() => setShowCreate(true)}>
           + New Product
         </button>
       </header>
@@ -93,12 +115,13 @@ export default function App() {
                     <th>Price</th>
                     <th>Stock</th>
                     <th>Category</th>
+                    <th>Actions</th>
                   </tr>
                 </thead>
                 <tbody>
                   {products.length === 0 ? (
                     <tr>
-                      <td colSpan={5} className="empty-row">No products found.</td>
+                      <td colSpan={6} className="empty-row">No products found.</td>
                     </tr>
                   ) : (
                     products.map(product => (
@@ -116,6 +139,12 @@ export default function App() {
                             {product.category?.name ?? '—'}
                           </span>
                         </td>
+                        <td>
+                          <div className="actions">
+                            <button className="btn-edit" onClick={() => setEditProduct(product)}>Edit</button>
+                            <button className="btn-delete" onClick={() => setDeleteProduct(product)}>Delete</button>
+                          </div>
+                        </td>
                       </tr>
                     ))
                   )}
@@ -125,21 +154,13 @@ export default function App() {
 
             {pagination && pagination.last_page > 1 && (
               <div className="pagination">
-                <button
-                  className="page-btn"
-                  disabled={page === 1}
-                  onClick={() => setPage(p => p - 1)}
-                >
+                <button className="page-btn" disabled={page === 1} onClick={() => setPage(p => p - 1)}>
                   ← Previous
                 </button>
                 <span className="page-info">
                   Page {pagination.current_page} of {pagination.last_page}
                 </span>
-                <button
-                  className="page-btn"
-                  disabled={page === pagination.last_page}
-                  onClick={() => setPage(p => p + 1)}
-                >
+                <button className="page-btn" disabled={page === pagination.last_page} onClick={() => setPage(p => p + 1)}>
                   Next →
                 </button>
               </div>
@@ -148,10 +169,18 @@ export default function App() {
         )}
       </main>
 
-      {showModal && (
-        <CreateProductModal
-          onClose={() => setShowModal(false)}
-          onCreated={handleCreated}
+      {showCreate && (
+        <CreateProductModal onClose={() => setShowCreate(false)} onCreated={refresh} />
+      )}
+      {editProduct && (
+        <EditProductModal product={editProduct} onClose={() => setEditProduct(null)} onUpdated={refresh} />
+      )}
+      {deleteProduct && (
+        <ConfirmDialog
+          message={`Are you sure you want to delete "${deleteProduct.name}"?`}
+          onConfirm={handleDelete}
+          onCancel={() => setDeleteProduct(null)}
+          loading={deleting}
         />
       )}
     </div>

@@ -93,3 +93,22 @@ App available at: `http://localhost:5173`
 **Environment variables** — API URL and token come from `.env`, never hardcoded. Swap environments without touching source code.
 
 **`useProducts` hook** — encapsulates all data fetching logic. Components stay clean and focused on rendering.
+
+---
+
+## What would I improve with 1 million products?
+
+**Search**
+Replace the current search with Meilisearch or Elasticsearch integration. Backend `LIKE` queries don't scale — a dedicated search engine handles millions of records with typo-tolerance and millisecond results.
+
+**Pagination**
+Switch from offset-based to **cursor-based pagination**. With millions of records, `OFFSET 500000` is slow because MySQL scans all previous records. Cursor pagination jumps directly to the next record.
+
+**Caching**
+Replace the manual hook with **React Query** or **SWR**. Avoids unnecessary refetches, handles stale data automatically, and enables optimistic updates on create/edit.
+
+**Table virtualization**
+Rendering all rows in the DOM is expensive at scale. Use **TanStack Virtual** to only render visible rows.
+
+**Global state**
+Local `useState` becomes hard to maintain at this scale. Migrate to **Zustand** or **React Query** for centralized, predictable catalog state management.
